@@ -15,6 +15,7 @@ class FireBaseController extends GetxController {
   List<ProfileModel> firebaseList = [];
   UploadTask? _uploadTask;
   String? urlDownload;
+  double progress = 0.0;
 
 //UPLOAD PROFILES TO FIREBASE FROM LOCAL DATABASE//
   uploadToFireBase() async {
@@ -41,8 +42,14 @@ class FireBaseController extends GetxController {
         barrierDismissible: false,
         title: 'Uploading',
         content: GetBuilder<FireBaseController>(builder: (cont) {
-          return Text(
-              "Please wait... ${cont.doneCount.toString()}/${_hiveController.allProfileList.length} completed.");
+          return Column(
+            children: [
+              Text(
+                  "Please wait... ${cont.doneCount.toString()}/${_hiveController.allProfileList.length} done. ${cont.progress}% completed."),
+              SizedBox(height: 5),
+              CircularProgressIndicator()
+            ],
+          );
         }));
     try {
       for (var element in _hiveController.allProfileList) {
@@ -74,7 +81,11 @@ class FireBaseController extends GetxController {
       firebaseList.clear();
       if (data.docs.isNotEmpty) {
         Get.defaultDialog(
-            title: 'Loading...', content: LinearProgressIndicator());
+            title: 'Loading...',
+            content: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: LinearProgressIndicator(),
+            ));
         await Future.delayed(Duration(milliseconds: 1500));
       }
       for (var element in data.docs) {
@@ -99,6 +110,12 @@ class FireBaseController extends GetxController {
     final path = File(paths);
     final ref = FirebaseStorage.instance.ref().child(file);
     _uploadTask = ref.putFile(path);
+    // _uploadTask!.snapshotEvents.listen((event) {
+    //   progress =
+    //       ((event.bytesTransferred.toDouble() / event.totalBytes.toDouble()) *
+    //           100.roundToDouble());
+    //   update();
+    // });
     final snapshot = await _uploadTask!.whenComplete(() {});
     urlDownload = await snapshot.ref.getDownloadURL();
   }
